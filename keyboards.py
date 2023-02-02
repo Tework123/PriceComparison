@@ -4,10 +4,11 @@ from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 b1 = KeyboardButton('/Добавить_товар')
 b2 = KeyboardButton('/Добавить_новую_группу')
 b3 = KeyboardButton('/Получить_графики')
+b5 = KeyboardButton('/Удалить')
 b4 = KeyboardButton('/Назад')
 
 keyb_start = ReplyKeyboardMarkup(resize_keyboard=True)
-keyb_start.add(b1).insert(b2).add(b3)
+keyb_start.add(b1).insert(b2).add(b3).insert(b5)
 
 # keyb_groups = ReplyKeyboardMarkup(resize_keyboard=True)
 # keyb_groups.add(b4)
@@ -19,12 +20,20 @@ def keyboard_groups(groups):
     keyb_groups.add(b4)
     if len(keyb_groups['keyboard']) <= 1:
         for i in groups:
-            b = KeyboardButton(f'{i[1]}')
+            b = KeyboardButton(f'{i[0]}')
             keyb_groups.insert(b)
         return keyb_groups
     else:
         print('Уже создал клаву')
         return keyb_groups
+
+b10 = KeyboardButton('/Удалить_товар')
+b20 = KeyboardButton('/Удалить_группу')
+b40 = KeyboardButton('/Назад')
+
+keyb_delete = ReplyKeyboardMarkup(resize_keyboard=True)
+keyb_delete.add(b10).insert(b20).add(b40)
+
 
 
 # class keyboard_groups:
