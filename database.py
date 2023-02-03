@@ -1,4 +1,5 @@
 import sqlite3 as sq
+import time
 
 
 # создание базы данных
@@ -19,11 +20,13 @@ def db_create():
                                     name str,
                                     shop str,
                                     url str)''')
-        cur.execute('''CREATE TABLE IF NOT EXISTS date (
-                                            thing_id INTEGER,
+        cur.execute('''CREATE TABLE IF NOT EXISTS time (
+                                            thing_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                                            kind_id INTEDER,
                                             name str,
                                             price INTEGER,
-                                            date INTEGER)''')
+                                            price_discount INTEGER,
+                                            time INTEGER)''')
 
 
 # ЗАПИСЬ ИНФОРМАЦИИ В БАЗУ ДАННЫХ
@@ -44,13 +47,26 @@ def db_insert(*args):
     # запись нового товара в базу через ссылку на товар
     if args[0] == 'thing':
         kind_id = args[1]
-        url = args[2]
+        name = args[2]
+        shop = args[3]
+        url = args[4]
         with sq.connect('PriceCompare.db') as con:
             cur = con.cursor()
 
             # тут функция должна достать с сайта url товара и shop
-            cur.execute('''INSERT INTO things (kind_id, url, shop) VALUES (?,?,?)''',
-                        (args[1], url, 'shop'))
+            cur.execute('''INSERT INTO things (kind_id, name, shop, url) VALUES (?,?,?,?)''',
+                        (kind_id, name, shop, url))
+
+    if args[0] == 'thing_time':
+        kind_id = args[1]
+        name = args[2]
+        price = args[3]
+        price_discount = args[4]
+
+        with sq.connect('PriceCompare.db') as con:
+            cur = con.cursor()
+            cur.execute('''INSERT INTO time (kind_id, name, price, price_discount, time) VALUES (?,?,?,?,?)''',
+                        (kind_id, name, price, price_discount, time.time()))
 
 
 # ПОЛУЧЕНИЕ ИНФОРМАЦИИ ИЗ БАЗЫ
@@ -88,16 +104,16 @@ def db_select(*args):
         kind_id = args[1]
         with sq.connect('PriceCompare.db') as con:
             cur = con.cursor()
-            cur.execute('''SELECT url, thing_id FROM things WHERE kind_id = ?''', (kind_id,))
+            cur.execute('''SELECT name, thing_id FROM things WHERE kind_id = ?''', (kind_id,))
             return cur.fetchall()
 
     # возвращает один товар из группы пользователя по его kind_id и url
     if args[0] == 'one_thing':
         kind_id = args[1]
-        url = args[2]
+        name = args[2]
         with sq.connect('PriceCompare.db') as con:
             cur = con.cursor()
-            cur.execute('''SELECT thing_id FROM things WHERE kind_id = ? and url = ?''', (kind_id, url))
+            cur.execute('''SELECT thing_id FROM things WHERE kind_id = ? and name = ?''', (kind_id, name))
             return cur.fetchall()
 
 
@@ -111,10 +127,13 @@ def db_delete(*args):
             cur = con.cursor()
             cur.execute('''DELETE FROM kinds_of_things WHERE user_id = ? and kind_id = ?''', (user_id, kind_id))
             cur.execute('''DELETE FROM things WHERE kind_id = ?''', (kind_id,))
+            cur.execute('''DELETE FROM time WHERE kind_id = ?''', (kind_id,))
 
+    # удаление товара
     if args[0] == 'delete_thing':
         one_group_id = args[1]
-        url = args[2]
+        name = args[2]
         with sq.connect('PriceCompare.db') as con:
             cur = con.cursor()
-            cur.execute('''DELETE FROM things WHERE kind_id = ? and url = ?''', (one_group_id, url))
+            cur.execute('''DELETE FROM things WHERE kind_id = ? and name = ?''', (one_group_id, name))
+            cur.execute('''DELETE FROM time WHERE kind_id = ? and name = ?''', (one_group_id, name))

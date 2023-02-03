@@ -4,6 +4,7 @@ from create_bot import bot, dp
 from keyboards import *
 from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters.state import State, StatesGroup
+from parcer_dns import get_data_with_selenium
 
 
 async def send_welcome(message: types.Message):  # + стартовая клава
@@ -55,13 +56,44 @@ async def msg_put_url(message: types.Message, state: FSMContext):
 
     async with state.proxy() as data:
         data['url_thing'] = message.text
+        shop = None
+        name_and_price = None
+        price_discount = None
+        if message.text[:24] == 'https://www.dns-shop.ru/':
+            name_and_price = get_data_with_selenium(message.text)
+            shop = 'DNS'
+            if name_and_price == None:
+                await message.answer('Не нашел название и цену товара')
+            print(name_and_price)
+            if name_and_price[1][-1] != '₽':
+
+                index = name_and_price[1].find('₽')
+                name = name_and_price[0]
+                price_discount = int(''.join(name_and_price[1][:index].split()))
+                price = int(''.join(name_and_price[1][index + 1:].split()))
+            else:
+                name = name_and_price[0]
+                price = int(''.join(name_and_price[1][:-1].split()))
+
+
+        else:
+            await message.answer('Такой магазин пока не доступен')
+
         one_group = db_select('kind_id', user_id, data['choose_group'])
         # ЗДЕСЬ РАЗОБРАТЬ ССЫЛКУ КАК HTML
         try:
-            db_insert('thing', one_group[0][0], data['url_thing'])
-            await message.answer(f'Добавил товар в группу {data["choose_group"]}', reply_markup=keyb_start)
+            db_insert('thing', one_group[0][0], name, shop, data['url_thing'])
+            db_insert('thing_time', one_group[0][0], name, price, price_discount)
+            if price_discount == None:
+                await message.answer(f'Добавил товар: {name} с ценой {price} в группу {data["choose_group"]}',
+                                     reply_markup=keyb_start)
+
+            if price_discount != None:
+                await message.answer(
+                    f'Добавил товар: {name} с ценой {price} в группу {data["choose_group"]}. Доступна скидка: {price_discount}',
+                    reply_markup=keyb_start)
         except:
-            await message.answer('Групп еще нет', reply_markup=keyb_start)
+            await message.answer('Ничего не добавил', reply_markup=keyb_start)
     await state.finish()
 
 
