@@ -21,7 +21,7 @@ def db_create():
                                     shop str,
                                     url str)''')
         cur.execute('''CREATE TABLE IF NOT EXISTS time (
-                                            thing_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                                            time_id INTEGER PRIMARY KEY AUTOINCREMENT,
                                             kind_id INTEDER,
                                             name str,
                                             price INTEGER,
@@ -115,6 +115,13 @@ def db_select(*args):
             cur = con.cursor()
             cur.execute('''SELECT thing_id FROM things WHERE kind_id = ? and name = ?''', (kind_id, name))
             return cur.fetchall()
+
+    if args[0] == 'whole_things':
+        with sq.connect('PriceCompare.db') as con:
+            cur = con.cursor()
+            cur.execute('''SELECT * FROM things''')
+            return cur.fetchall()
+
 
 
 # УДАЛЕНИЕ ИНФОРМАЦИИ ИЗ БАЗЫ
