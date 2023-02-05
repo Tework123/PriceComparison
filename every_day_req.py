@@ -2,28 +2,29 @@ import time
 import asyncio
 from database import *
 from parcer_dns import get_data_with_selenium
+from concurrent.futures import ThreadPoolExecutor
 
-
-# from parcer_dns import mmmm
 
 async def every_day_request(wait_for):
     while True:
         await asyncio.sleep(wait_for)
         whole_things = db_select('whole_things')
-        print(whole_things)
         print('Пошел жесткий парс')
+        pars = []
+        with ThreadPoolExecutor(max_workers=2) as executor:
+            for thing in whole_things:
+                pars.append(executor.submit(get_data_with_selenium, thing[4]))
 
-        with ThreadPoolExecutor(max_workers=1) as executor:
-        for i in whole_things:
-            url = i[4]
-            kind_id = i[1]
+        for i in range(len(pars)):
+            name_and_price = pars[i].result()
+            kind_id = whole_things[i][1]
+            url = whole_things[i][4]
+
             price_discount = None
             price = None
 
             if url[:24] == 'https://www.dns-shop.ru/':
-                #name_and_price = get_data_with_selenium(url)
-                name_and_price = executor.s
-                print(1)
+
                 shop = 'DNS'
                 if name_and_price == None:
                     print('В ПАРСЕ Не нашел магазина')
