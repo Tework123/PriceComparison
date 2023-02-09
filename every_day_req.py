@@ -3,6 +3,8 @@ import asyncio
 from database import *
 from parcer_dns import get_data_with_selenium
 from concurrent.futures import ThreadPoolExecutor
+from create_bot import bot
+from main import send_message
 
 
 async def every_day_request(wait_for):
@@ -17,40 +19,61 @@ async def every_day_request(wait_for):
 
         for i in range(len(pars)):
             name_and_price = pars[i].result()
+
             kind_id = whole_things[i][1]
             url = whole_things[i][4]
 
             price_discount = None
             price = None
-
-            if url[:24] == 'https://www.dns-shop.ru/':
-
-                shop = 'DNS'
-                if name_and_price == None:
-                    print('В ПАРСЕ Не нашел магазина')
-                print(name_and_price)
-                if name_and_price[1][-1] != '₽':
-
-                    index = name_and_price[1].find('₽')
-                    name = name_and_price[0]
-                    price_discount = int(''.join(name_and_price[1][:index].split()))
-                    price = int(''.join(name_and_price[1][index + 1:].split()))
-                else:
-                    name = name_and_price[0]
-                    price = int(''.join(name_and_price[1][:-1].split()))
-
-            # через if другие магазины тут
-
-            else:
-                print('В ПАРСЕ Такой магазин пока не доступен')
-
+            name = None
             try:
-                db_insert('thing_time', kind_id, name, price, price_discount)
-                if price_discount == None:
-                    print(f'В ПАРСЕ добавил товар {name} с ценой {price}')
 
-                if price_discount != None:
-                    print(
-                        f'В ПАРСЕ добавил товар {name} с ценой {price}. Доступна скидка: {price_discount}')
+                if name_and_price != None:
+
+                    if url[:24] == 'https://www.dns-shop.ru/':
+                        shop = 'DNS'
+
+                        if name_and_price[1][-1] != '₽':
+
+                            index = name_and_price[1].find('₽')
+                            name = name_and_price[0]
+                            price_discount = int(''.join(name_and_price[1][:index].split()))
+                            price = int(''.join(name_and_price[1][index + 1:].split()))
+                        else:
+                            name = name_and_price[0]
+                            price = int(''.join(name_and_price[1][:-1].split()))
+
+                    # через if другие магазины тут
+
+                    else:
+                        print('В ПАРСЕ Такой магазин пока не доступен')
+
+                    old_price = db_select('last_price', url, kind_id)
+
+                    db_insert('thing_time', kind_id, name, price, price_discount)
+                    if price_discount == None:
+                        print(f'В ПАРСЕ добавил товар {name} с ценой {price}')
+
+                    if price_discount != None:
+                        print(
+                            f'В ПАРСЕ добавил товар {name} с ценой {price}. Доступна скидка: {price_discount}')
+
+                    if old_price[0][0] != price:
+                        user_id = db_select('user_id', kind_id)
+
+                        await send_message(user_id[0][0], f'Цена на товар - {name} изменилась с '
+                                                          f'{price} на {old_price[0][0]}')
+                    print(old_price)
+                    if old_price[0][1] == None and price_discount != None:
+                        user_id = db_select('user_id', kind_id)
+
+                        await send_message(user_id[0][0], f'На товар - {name} появилась скидка: '
+                                                          f'без скидки - {old_price[0][1]}, '
+                                                          f'со скидкой - {price_discount}')
+                else:
+                    a = 1 / 0
             except:
+
                 print('В ПАРСЕ НИчего не добавил')
+                user_id = db_select('user_id', kind_id)
+                await send_message(user_id[0][0], f'В ПАРСЕ Ничего не добавил, так как {name_and_price}')

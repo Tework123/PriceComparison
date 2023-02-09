@@ -26,7 +26,7 @@ def db_create():
                                             name str,
                                             price INTEGER,
                                             price_discount INTEGER,
-                                            time INTEGER)''')
+                                            time_t INTEGER)''')
 
 
 # ЗАПИСЬ ИНФОРМАЦИИ В БАЗУ ДАННЫХ
@@ -65,7 +65,7 @@ def db_insert(*args):
 
         with sq.connect('PriceCompare.db') as con:
             cur = con.cursor()
-            cur.execute('''INSERT INTO time (kind_id, name, price, price_discount, time) VALUES (?,?,?,?,?)''',
+            cur.execute('''INSERT INTO time (kind_id, name, price, price_discount, time_t) VALUES (?,?,?,?,?)''',
                         (kind_id, name, price, price_discount, time.time()))
 
 
@@ -115,13 +115,27 @@ def db_select(*args):
             cur = con.cursor()
             cur.execute('''SELECT thing_id FROM things WHERE kind_id = ? and name = ?''', (kind_id, name))
             return cur.fetchall()
-
+    # возвращает все товары для ежедневного парса
     if args[0] == 'whole_things':
         with sq.connect('PriceCompare.db') as con:
             cur = con.cursor()
             cur.execute('''SELECT * FROM things''')
             return cur.fetchall()
+    # возвращает юзер id для отправки сообщения о изменении цены, удалении товара и тд
+    if args[0] == 'user_id':
+        kind_id = args[1]
+        with sq.connect('PriceCompare.db') as con:
+            cur = con.cursor()
+            cur.execute('''SELECT user_id FROM kinds_of_things WHERE kind_id = ?''', (kind_id,))
+            return cur.fetchall()
 
+    if args[0] == 'last_price':
+        url = args[1]
+        kind_id = args[2]
+        with sq.connect('PriceCompare.db') as con:
+            cur = con.cursor()
+            cur.execute('''SELECT price, price_discount FROM time WHERE time_t = (SELECT MAX(time_t) FROM time WHERE name = (SELECT name FROM things WHERE url = ?) and kind_id = ?)''', (url, kind_id))
+            return cur.fetchall()
 
 
 # УДАЛЕНИЕ ИНФОРМАЦИИ ИЗ БАЗЫ

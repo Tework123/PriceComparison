@@ -8,7 +8,7 @@ from concurrent.futures import ThreadPoolExecutor
 
 def get_data_with_selenium(url):
     # поменять путь для драйвера
-    ser = Service(r'C:\Users\danil\PycharmProjects\Telega_price\chromedriver.exe')
+    ser = Service(r'C:\programmboy\python_main\PriceComparison\chromedriver.exe')
     op = webdriver.ChromeOptions()
     s = webdriver.Chrome(service=ser, options=op)
     try:
@@ -33,15 +33,11 @@ def get_data_with_selenium(url):
 
     finally:
         # s.close()
-        s.quit()
+        # s.quit()
         print(name_thing.text, price_thing.text)
         return name_thing.text, price_thing.text
 
-СДЕЛАТЬ ВОРКЕРОВ ДЛЯ ДОБАВЛЕНИЯ ЮРЛ И ПАРСА
-ДЛЯ ВК БОТА: СКАЧАТЬ ФОТКУ РАСПИСАНИЯ И ПРОПИСАТЬ К НЕЙ НОВЫЙ ПУТЬ
 
-ДЛЯ ТЕЛЕГРАМ-БОТА: НАСТРОИТЬ ЦИКЛ ПАРСА, ЭТОТ ФАЙЛ УДАЛИТЬ, СКАЧАТЬ ХРОМДРАЙВЕР, НЕ ЗАБЫТЬ ТОКЕНЫ. рЕКВАЙРЕМЕНТ НА ГИТХАБЕ НОРМАЛЬНЫЙ
-А ТАКЖЕ SQLLITE
 result = []
 whole_things = ['https://www.dns-shop.ru/product/64e68538a1c93330/polirovalnaa-masina-makita-9237cb/opinion/',
                 'https://www.dns-shop.ru/product/ff0f5ce6c4eb2ff2/podstavka-dla-plastinok-record-pro-gk-r25/',
@@ -54,11 +50,11 @@ whole_things = ['https://www.dns-shop.ru/product/64e68538a1c93330/polirovalnaa-m
                 ]
 
 with ThreadPoolExecutor(max_workers=3) as ex:
-    start = time.time()
+
     for i in whole_things:
         #result.append(ex.submit(get_data_with_selenium, i))
         ex.submit(get_data_with_selenium, i)
-print(finish-start)
+print('YES')
 # for i in whole_things:
 #     start = time.time()
 #     get_data_with_selenium(i)

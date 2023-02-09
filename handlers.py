@@ -1,6 +1,6 @@
 from database import *
 from aiogram import Dispatcher, types
-from create_bot import bot, dp
+from create_bot import bot
 from keyboards import *
 from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters.state import State, StatesGroup
@@ -16,6 +16,8 @@ async def send_welcome(message: types.Message):  # + стартовая клав
         print('Пользователь уже в базе')
 
     await bot.send_message(message.from_user.id, 'Hello!\nI`m Bot', reply_markup=keyb_start)
+
+
 
 
 # класс для запоминания нескольких сообщений пользователя
@@ -59,25 +61,29 @@ async def msg_put_url(message: types.Message, state: FSMContext):
         shop = None
         name_and_price = None
         price_discount = None
-        if message.text[:24] == 'https://www.dns-shop.ru/':
-            name_and_price = get_data_with_selenium(message.text)
-            shop = 'DNS'
-            if name_and_price == None:
-                await message.answer('Не нашел название и цену товара')
-            print(name_and_price)
-            if name_and_price[1][-1] != '₽':
+        try:
+            if message.text[:24] == 'https://www.dns-shop.ru/' or message.text[:12] =='dns-shop.ru/':
+                name_and_price = get_data_with_selenium(message.text)
+                shop = 'DNS'
 
-                index = name_and_price[1].find('₽')
-                name = name_and_price[0]
-                price_discount = int(''.join(name_and_price[1][:index].split()))
-                price = int(''.join(name_and_price[1][index + 1:].split()))
+                if name_and_price[1][-1] != '₽':
+
+                    index = name_and_price[1].find('₽')
+                    name = name_and_price[0]
+                    price_discount = int(''.join(name_and_price[1][:index].split()))
+                    price = int(''.join(name_and_price[1][index + 1:].split()))
+                else:
+                    name = name_and_price[0]
+                    price = int(''.join(name_and_price[1][:-1].split()))
+
+            ##if
+
             else:
-                name = name_and_price[0]
-                price = int(''.join(name_and_price[1][:-1].split()))
+                await message.answer('Такой магазин пока не доступен')
 
+        except:
+            await message.answer('Не нашел название и цену товара')
 
-        else:
-            await message.answer('Такой магазин пока не доступен')
 
         one_group = db_select('kind_id', user_id, data['choose_group'])
         # ЗДЕСЬ РАЗОБРАТЬ ССЫЛКУ КАК HTML
