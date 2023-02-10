@@ -26,6 +26,7 @@ def db_create():
                                             name str,
                                             price INTEGER,
                                             price_discount INTEGER,
+                                            url str,
                                             time_t INTEGER)''')
 
 
@@ -62,11 +63,12 @@ def db_insert(*args):
         name = args[2]
         price = args[3]
         price_discount = args[4]
+        url = args[5]
 
         with sq.connect('PriceCompare.db') as con:
             cur = con.cursor()
-            cur.execute('''INSERT INTO time (kind_id, name, price, price_discount, time_t) VALUES (?,?,?,?,?)''',
-                        (kind_id, name, price, price_discount, time.time()))
+            cur.execute('''INSERT INTO time (kind_id, name, price, price_discount, url, time_t) VALUES (?,?,?,?,?,?)''',
+                        (kind_id, name, price, price_discount, url, time.time()))
 
 
 # ПОЛУЧЕНИЕ ИНФОРМАЦИИ ИЗ БАЗЫ
@@ -128,13 +130,22 @@ def db_select(*args):
             cur = con.cursor()
             cur.execute('''SELECT user_id FROM kinds_of_things WHERE kind_id = ?''', (kind_id,))
             return cur.fetchall()
-
+    # возвращает последнюю цену на товар
     if args[0] == 'last_price':
         url = args[1]
         kind_id = args[2]
         with sq.connect('PriceCompare.db') as con:
             cur = con.cursor()
-            cur.execute('''SELECT price, price_discount FROM time WHERE time_t = (SELECT MAX(time_t) FROM time WHERE name = (SELECT name FROM things WHERE url = ?) and kind_id = ?)''', (url, kind_id))
+            cur.execute(
+                '''SELECT price, price_discount FROM time WHERE time_t = (SELECT MAX(time_t) FROM time WHERE name = (SELECT name FROM things WHERE url = ?) and kind_id = ?)''',
+                (url, kind_id))
+            return cur.fetchall()
+
+    if args[0] == 'graf_time':
+        kind_id = args[1]
+        with sq.connect('PriceCompare.db') as con:
+            cur = con.cursor()
+            cur.execute('''SELECT name, price, price_discount, url, time_t FROM time WHERE kind_id = ?''', (kind_id,))
             return cur.fetchall()
 
 

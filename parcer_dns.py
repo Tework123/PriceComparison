@@ -17,7 +17,7 @@ def get_data_with_selenium(url):
         s = webdriver.Chrome(service=ser, options=op)
 
         s.get(url=url)
-        time.sleep(2)
+        time.sleep(8)
         data_page = s.page_source
 
         soup = BeautifulSoup(data_page, 'lxml')
@@ -30,8 +30,6 @@ def get_data_with_selenium(url):
             .find(class_="product-buy product-buy_one-line") \
             .find(class_="product-buy__price-wrap product-buy__price-wrap_interactive").find(
             class_="product-buy__price")
-
-
 
     except:
         print('no')

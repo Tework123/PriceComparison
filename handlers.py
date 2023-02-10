@@ -5,6 +5,8 @@ from keyboards import *
 from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters.state import State, StatesGroup
 from parcer_dns import get_data_with_selenium
+from aiogram.types import InputFile
+import grafs
 
 
 async def send_welcome(message: types.Message):  # + стартовая клава
@@ -18,6 +20,8 @@ async def send_welcome(message: types.Message):  # + стартовая клав
     await bot.send_message(message.from_user.id, 'Hello!\nI`m Bot', reply_markup=keyb_start)
 
 
+async def send_graf(id, graf):
+    await bot.send_photo(id, graf)
 
 
 # класс для запоминания нескольких сообщений пользователя
@@ -31,6 +35,9 @@ class FSMAdmin(StatesGroup):
     delete = State()
     delete_group_thing = State()
     delete_thing = State()
+
+    # состояния для вывода графиков
+    create_graf = State()
 
 
 # ФУНКЦИИ ДЛЯ ДОБАВЛЕНИЯ НОВОГО ТОВАРА В СУЩЕСТВУЮЩУЮ ГРУППУ
@@ -62,7 +69,7 @@ async def msg_put_url(message: types.Message, state: FSMContext):
         name_and_price = None
         price_discount = None
         try:
-            if message.text[:24] == 'https://www.dns-shop.ru/' or message.text[:12] =='dns-shop.ru/':
+            if message.text[:24] == 'https://www.dns-shop.ru/' or message.text[:12] == 'dns-shop.ru/':
                 name_and_price = get_data_with_selenium(message.text)
                 shop = 'DNS'
 
@@ -84,12 +91,11 @@ async def msg_put_url(message: types.Message, state: FSMContext):
         except:
             await message.answer('Не нашел название и цену товара')
 
-
         one_group = db_select('kind_id', user_id, data['choose_group'])
         # ЗДЕСЬ РАЗОБРАТЬ ССЫЛКУ КАК HTML
         try:
             db_insert('thing', one_group[0][0], name, shop, data['url_thing'])
-            db_insert('thing_time', one_group[0][0], name, price, price_discount)
+            db_insert('thing_time', one_group[0][0], name, price, price_discount, data['url_thing'])
             if price_discount == None:
                 await message.answer(f'Добавил товар: {name} с ценой {price} в группу {data["choose_group"]}',
                                      reply_markup=keyb_start)
@@ -212,9 +218,33 @@ async def exit(message: types.Message, state: FSMContext):
 # функция для вывода графиков, тут тоже нужно группы выводить и активировать состояние
 async def msg_put_graf(message: types.Message):
     if message.text == '/Получить_графики':
-        await message.answer('Выгружаю графики')
+        user_id = message.from_id
+        groups = db_select('whole_groups', user_id)
+        await message.answer('Выберите группу', reply_markup=keyboard_groups(groups))
+        await FSMAdmin.create_graf.set()
 
 
+async def msg_put_graf_end(message: types.Message, state: FSMContext):
+    user_id = message.from_id
+
+    try:
+        one_group_id = db_select('kind_id', user_id, message.text)
+        list_times = db_select('graf_time', one_group_id[0][0])
+
+        grafs.get_graf(list_times)
+        graf = InputFile(r'C:\programmboy\python_main\PriceComparison\graf_price.png')
+
+        await send_graf(user_id, graf)
+
+        await message.answer(f'Отправляю графики для группы: {message.text}', reply_markup=keyb_start)
+        await state.finish()
+
+    except:
+        await message.answer('Нет такой группы', reply_markup=keyb_start)
+        await state.finish()
+
+
+# ловит остальные сообщения
 async def msg_catcher(message: types.Message):
     await message.answer('Нет такой команды', reply_markup=keyb_start)
     await message.delete()
@@ -240,5 +270,9 @@ def register_handlers(dp: Dispatcher):
     dp.register_message_handler(msg_delete_choose, commands=['Удалить_группу', 'Удалить_товар'], state=FSMAdmin.delete)
     dp.register_message_handler(msg_delete_group_thing, state=FSMAdmin.delete_group_thing)
     dp.register_message_handler(msg_delete_thing, state=FSMAdmin.delete_thing)
+
+    # для вывода графиков
+    dp.register_message_handler(msg_put_graf, commands=['Получить_графики'], state=None)
+    dp.register_message_handler(msg_put_graf_end, state=FSMAdmin.create_graf)
 
     dp.register_message_handler(msg_catcher)
