@@ -32,15 +32,14 @@ async def every_day_request(wait_for):
 
                     if url[:24] == 'https://www.dns-shop.ru/':
                         shop = 'DNS'
+                        name = shop + '#' + name_and_price[0]
 
                         if name_and_price[1][-1] != '₽':
-
                             index = name_and_price[1].find('₽')
-                            name = name_and_price[0]
                             price_discount = int(''.join(name_and_price[1][:index].split()))
                             price = int(''.join(name_and_price[1][index + 1:].split()))
+
                         else:
-                            name = name_and_price[0]
                             price = int(''.join(name_and_price[1][:-1].split()))
 
                     # через if другие магазины тут
@@ -62,15 +61,15 @@ async def every_day_request(wait_for):
                         user_id = db_select('user_id', kind_id)
 
                         await send_message(user_id[0][0], f'Цена на товар - {name} изменилась с '
-                                                                     f'{price} на {old_price[0][0]}. '
+                                                          f'{price} на {old_price[0][0]}. '
                                                           f'Ссылка: {url}')
                     print(old_price)
                     if old_price[0][1] == None and price_discount != None:
                         user_id = db_select('user_id', kind_id)
 
                         await send_message(user_id[0][0], f'На товар - {name} появилась скидка: '
-                                                                     f'без скидки - {old_price[0][1]}, '
-                                                                     f'со скидкой - {price_discount}. '
+                                                          f'без скидки - {old_price[0][1]}, '
+                                                          f'со скидкой - {price_discount}. '
                                                           f'Ссылка: {url}')
                 else:
                     a = 1 / 0
