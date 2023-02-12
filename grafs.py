@@ -21,12 +21,11 @@ def get_graf(list_times):
     # а то может совпадать, также можно цвет линий изменить
     # под магазин
 
-
     list_times = sorted(list_times, key=lambda x: x[0])
-    # for i in list_times:
-    #     print(i)
+
     thing = list_times[0][0]
     result = []
+    text_for_message = []
     count = 0
     for i in range(len(list_times)):
         if thing == list_times[i][0] and count == 0:
@@ -36,62 +35,88 @@ def get_graf(list_times):
         count += 1
         if thing != list_times[i][0]:
             thing = list_times[i][0]
-            count = 0
+            result.append([list_times[i]])
+            count = 1
 
-    for i in result:
-        print(i)
+    # for i in result:
+    #     print(i)
 
-    # for one_list in result:
-    #     prices = []
-    #     for price in one_list:
-    #         if price[2] == None:
-    #             prices.append(price[1])
-    #         else:
-    #             prices.append(price[2])
-    #
-    #     plt.plot([datetime.datetime.fromtimestamp(j[4]).strftime('%B') for j in one_list], prices)
 
-    c = 0
-    for i in range(1, 5):
-        count = 0
-        times = []
-        for time1 in range(1, 20):
-            time1 = time.time() + count
-
-            time_2 = get_time(time1)
-            print(time_2)
-            times.append(time_2)
-            count += 86400
-
-        prices = []
-        c += 4000
-        for price in range(1, 20):
-            price = random.randrange(24000, 30000) + c
-
-            prices.append(price)
-
-        plt.plot(times, prices)
-    #
     years = mdates.YearLocator()
     months = mdates.MonthLocator()
     days = mdates.DayLocator()
-    timeFmt = mdates.DateFormatter('%Y-%m')
-    years_fmt = mdates.DateFormatter('% Y')
-
-
+    timeFmt = mdates.DateFormatter('%d-%m')
     fig, ax = plt.subplots()
-    #plt.plot(events, readings)
-    Axis.set_major_locator(ax.xaxis, years)
-    #ax.xaxis.set_major_locator(years)
+
+    for one_list in result:
+        print(one_list)
+
+        text_for_message.append((one_list[-1][0],one_list[-1][1]
+        ,(one_list[-1][2]),one_list[-1][3], one_list[-1][4]))
+
+        prices = []
+        times = []
+        for price in one_list:
+            if price[2] == None:
+                prices.append(price[1])
+            else:
+                prices.append(price[2])
+        for time1 in one_list:
+            time1 = time1[4]
+            time2 = get_time(time1)
+            times.append(time2)
+
+        ax.plot(times, prices,label=f'{one_list[0][0]}')
+
+
+
+    # c = 0
+    # for i in range(1, 6):
+    #     count = 0
+    #     times = []
+    #     for time1 in range(1, 100):
+    #         time1 = time.time() + count
+    #
+    #         time_2 = get_time(time1)
+    #         times.append(time_2)
+    #         count += 86400
+    #
+    #     prices = []
+    #     c += 6000
+    #     for price in range(1, 100):
+    #         price = random.randrange(26000, 30000) + c
+    #
+    #         prices.append(price)
+    #     print(times)
+    #     print(prices)
+    #     ax.plot(times, prices, label=f'{list_times[i][0]}')
+
+
+    if len(result[0]) < 10:
+        Axis.set_major_locator(ax.xaxis, days)
+    if 10 <= len(result[0]) < 200:
+        Axis.set_minor_locator(ax.xaxis, days)
+        Axis.set_major_locator(ax.xaxis, months)
+
+    if 200 <= len(result[0]) < 100000:
+        Axis.set_minor_locator(ax.xaxis, months)
+        Axis.set_major_locator(ax.xaxis, years)
+
+
+    fig.set_figheight(10)
+    fig.set_figwidth(17)
+
+    ax.xaxis.set_major_formatter(timeFmt)
     #ax.xaxis.set_major_formatter(timeFmt)
-    ax.xaxis.set_minor_locator(days)
 
-
-    plt.show()
+    ax.grid(True)
+    ax.legend( loc='upper right', fontsize=10, framealpha=0.8)
+    #plt.show()
     plt.savefig('graf_price.png')
+    return text_for_message
 
 
-list_times = [('13.3" Ноутбук Apple MacBook Air серебристый', 87999, 80999,
+list_times1 = [('13.3" Ноутбук Apple MacBook Air серебристый', 87999, 80999,
                'https://www.dns-shop.ru/product/819584c1e861ed20/133-noutbuk-apple-macbook-air-serebristyj/',
                1676001494.1193886),
               ('13.3" Ноутбук Apple MacBook Air серебристый', 87999, 83999,
@@ -141,4 +166,4 @@ list_times = [('13.3" Ноутбук Apple MacBook Air серебристый', 
                1676001909.627918)
               ]
 
-get_graf(list_times)
+#get_graf(list_times)

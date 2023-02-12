@@ -29,6 +29,7 @@ class FSMAdmin(StatesGroup):
     # состояния для select и insert
     choose_group = State()
     url_thing = State()
+    desired_price = State()
     name_new_group = State()
 
     # состояния для delete
@@ -76,33 +77,48 @@ async def msg_put_url(message: types.Message, state: FSMContext):
                 if name_and_price[1][-1] != '₽':
 
                     index = name_and_price[1].find('₽')
-                    name = name_and_price[0]
+                    name = shop + '# ' + name_and_price[0]
                     price_discount = int(''.join(name_and_price[1][:index].split()))
                     price = int(''.join(name_and_price[1][index + 1:].split()))
                 else:
-                    name = name_and_price[0]
+                    name = shop + '# ' + name_and_price[0]
                     price = int(''.join(name_and_price[1][:-1].split()))
 
-            ##if
+            ##if другие магазины
 
             else:
                 await message.answer('Такой магазин пока не доступен')
+            await message.answer(f'Добавьте желаемую цену для товара: {name}')
+            data['name'] = name
+            data['shop'] = shop
+            data['price'] = price
+            data['price_discount'] = price_discount
 
         except:
             await message.answer('Не нашел название и цену товара')
+        await FSMAdmin.next()
+
+
+async def msg_put_desired_price(message: types.Message, state: FSMContext):
+    user_id = message.from_id
+
+    async with state.proxy() as data:
+        data['desired_price'] = message.text
 
         one_group = db_select('kind_id', user_id, data['choose_group'])
         # ЗДЕСЬ РАЗОБРАТЬ ССЫЛКУ КАК HTML
         try:
-            db_insert('thing', one_group[0][0], name, shop, data['url_thing'])
-            db_insert('thing_time', one_group[0][0], name, price, price_discount, data['url_thing'])
-            if price_discount == None:
-                await message.answer(f'Добавил товар: {name} с ценой {price} в группу {data["choose_group"]}',
-                                     reply_markup=keyb_start)
-
-            if price_discount != None:
+            db_insert('thing', one_group[0][0], data['name'], data['shop'], data['url_thing'])
+            db_insert('thing_time', one_group[0][0], data['name'], data['price'], data['price_discount'],
+                      data['url_thing'], data['desired_price'])
+            if data['price_discount'] == None:
                 await message.answer(
-                    f'Добавил товар: {name} с ценой {price} в группу {data["choose_group"]}. Доступна скидка: {price_discount}',
+                    f"Добавил товар: {data['name']} с ценой {data['price']} в группу {data['choose_group']}",
+                    reply_markup=keyb_start)
+
+            if data['price_discount'] != None:
+                await message.answer(
+                    f"Добавил товар: {data['name']} с ценой {data['price']} в группу {data['choose_group']}. Доступна скидка: {data['price_discount']}",
                     reply_markup=keyb_start)
         except:
             await message.answer('Ничего не добавил', reply_markup=keyb_start)
@@ -231,16 +247,17 @@ async def msg_put_graf_end(message: types.Message, state: FSMContext):
         one_group_id = db_select('kind_id', user_id, message.text)
         list_times = db_select('graf_time', one_group_id[0][0])
 
-        grafs.get_graf(list_times)
+        text_message = grafs.get_graf(list_times)
         graf = InputFile(r'C:\programmboy\python_main\PriceComparison\graf_price.png')
 
         await send_graf(user_id, graf)
+        await message.answer(text_message)
 
         await message.answer(f'Отправляю графики для группы: {message.text}', reply_markup=keyb_start)
         await state.finish()
 
     except:
-        await message.answer('Нет такой группы', reply_markup=keyb_start)
+        await message.answer('Нет данных', reply_markup=keyb_start)
         await state.finish()
 
 
@@ -260,6 +277,7 @@ def register_handlers(dp: Dispatcher):
     dp.register_message_handler(msg_put_thing, commands=['Добавить_товар'], state=None)
     dp.register_message_handler(msg_choose_group, state=FSMAdmin.choose_group)
     dp.register_message_handler(msg_put_url, state=FSMAdmin.url_thing)
+    dp.register_message_handler(msg_put_desired_price, state=FSMAdmin.desired_price)
 
     # для добавления новой группы
     dp.register_message_handler(msg_put_new_group, commands=['Добавить_новую_группу'], state=None)

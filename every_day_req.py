@@ -32,7 +32,7 @@ async def every_day_request(wait_for):
 
                     if url[:24] == 'https://www.dns-shop.ru/':
                         shop = 'DNS'
-                        name = shop + '#' + name_and_price[0]
+                        name = shop + '# ' + name_and_price[0]
 
                         if name_and_price[1][-1] != '₽':
                             index = name_and_price[1].find('₽')

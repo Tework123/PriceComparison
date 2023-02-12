@@ -27,7 +27,8 @@ def db_create():
                                             price INTEGER,
                                             price_discount INTEGER,
                                             url str,
-                                            time_t INTEGER)''')
+                                            time_t INTEGER,
+                                            desired_price INTEGER)''')
 
 
 # ЗАПИСЬ ИНФОРМАЦИИ В БАЗУ ДАННЫХ
@@ -64,11 +65,12 @@ def db_insert(*args):
         price = args[3]
         price_discount = args[4]
         url = args[5]
+        desired_price = args[6]
 
         with sq.connect('PriceCompare.db') as con:
             cur = con.cursor()
-            cur.execute('''INSERT INTO time (kind_id, name, price, price_discount, url, time_t) VALUES (?,?,?,?,?,?)''',
-                        (kind_id, name, price, price_discount, url, time.time()))
+            cur.execute('''INSERT INTO time (kind_id, name, price, price_discount, url, time_t,desired_price) VALUES (?,?,?,?,?,?,?)''',
+                        (kind_id, name, price, price_discount, url, time.time(),desired_price))
 
 
 # ПОЛУЧЕНИЕ ИНФОРМАЦИИ ИЗ БАЗЫ
@@ -145,7 +147,7 @@ def db_select(*args):
         kind_id = args[1]
         with sq.connect('PriceCompare.db') as con:
             cur = con.cursor()
-            cur.execute('''SELECT name, price, price_discount, url, time_t FROM time WHERE kind_id = ?''', (kind_id,))
+            cur.execute('''SELECT name, price, price_discount, url, time_t, desired_price FROM time WHERE kind_id = ?''', (kind_id,))
             return cur.fetchall()
 
 
