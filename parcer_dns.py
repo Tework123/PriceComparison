@@ -3,43 +3,61 @@ from bs4 import BeautifulSoup
 import lxml
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.common.by import By
 
-
+# парс цен с динамического сайта с помощью селениума
 def get_data_with_selenium(url):
-    # поменять путь для драйвера
-    ser = Service(r'C:\programmboy\python_main\PriceComparison\chromedriver.exe')
 
+    # поменять путь для драйвера при установке на сервер
+    ser = Service(r'C:\programmboy\python_main\PriceComparison\chromedriver.exe')
     op = webdriver.ChromeOptions()
     name_thing = None
     price_thing = None
     flag = False
     try:
-        s = webdriver.Chrome(service=ser, options=op)
+    #if 1 == 1:
+        driver = webdriver.Chrome(service=ser, options=op)
+        driver.get(url=url)
 
-        s.get(url=url)
-        time.sleep(8)
-        data_page = s.page_source
+        # остановка до получения цены и названия товара
+        driver.implicitly_wait(10)
 
-        soup = BeautifulSoup(data_page, 'lxml')
-        name_thing = soup.find(class_='container product-card'
-                               ).find(class_="product-card-top product-card-top_full").find(
-            class_="product-card-top__name")
+        # парс цены и названия
+        name_thing = driver.find_element(By.CLASS_NAME, 'product-card-top__title')
+        name_thing = name_thing.text.split()
 
-        price_thing = soup.find(class_='container product-card').find(
-            class_="product-card-top product-card-top_full") \
-            .find(class_="product-buy product-buy_one-line") \
-            .find(class_="product-buy__price-wrap product-buy__price-wrap_interactive").find(
-            class_="product-buy__price")
+        # обработка некоторых проблем
+        if name_thing[0] == 'Отзывы' or name_thing[0] == 'Оценка':
+            name_thing = ' '.join(name_thing[2:])
+        if name_thing[0] == 'Коммуникатор' or name_thing[0] == 'Обзоры':
+            name_thing = ' '.join(name_thing[1:])
+        else:
+            name_thing = ' '.join(name_thing)
+
+        price_thing = driver.find_element(By.CLASS_NAME, 'product-buy__price')
+
+        # time.sleep(8)
+        # data_page = driver.page_source
+        #
+        # soup = BeautifulSoup(data_page, 'lxml')
+        # name_thing = soup.find(class_='container product-card'
+        #                        ).find(class_="product-card-top product-card-top_full").find(
+        #     class_="product-card-top__name")
+        #
+        # price_thing = soup.find(class_='container product-card').find(
+        #     class_="product-card-top product-card-top_full") \
+        #     .find(class_="product-buy product-buy_one-line") \
+        #     .find(class_="product-buy__price-wrap product-buy__price-wrap_interactive").find(
+        #     class_="product-buy__price")
 
     except:
         print('no')
         flag = True
 
     finally:
-
         # s.close()
         # s.quit()
         if flag == True:
             return None
         else:
-            return name_thing.text, price_thing.text
+            return name_thing, price_thing.text

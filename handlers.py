@@ -1,3 +1,5 @@
+import asyncio
+
 from database import *
 from aiogram import Dispatcher, types
 from create_bot import bot
@@ -21,7 +23,7 @@ async def send_welcome(message: types.Message):  # + стартовая клав
 
 
 async def send_graf(id, graf):
-    await bot.send_photo(id, graf)
+    await bot.send_document(id, graf)
 
 
 # класс для запоминания нескольких сообщений пользователя
@@ -69,6 +71,7 @@ async def msg_put_url(message: types.Message, state: FSMContext):
         shop = None
         name_and_price = None
         price_discount = None
+        flag = False
         try:
             if message.text[:24] == 'https://www.dns-shop.ru/' or message.text[:12] == 'dns-shop.ru/':
                 name_and_price = get_data_with_selenium(message.text)
@@ -85,9 +88,10 @@ async def msg_put_url(message: types.Message, state: FSMContext):
                     price = int(''.join(name_and_price[1][:-1].split()))
 
             ##if другие магазины
-
+                flag = True
             else:
-                await message.answer('Такой магазин пока не доступен')
+                await message.answer('Такой магазин пока не доступен', reply_markup=keyb_start)
+                await state.finish()
             await message.answer(f'Добавьте желаемую цену для товара: {name}')
             data['name'] = name
             data['shop'] = shop
@@ -95,8 +99,10 @@ async def msg_put_url(message: types.Message, state: FSMContext):
             data['price_discount'] = price_discount
 
         except:
-            await message.answer('Не нашел название и цену товара')
-        await FSMAdmin.next()
+            await message.answer('Не нашел название и цену товара', reply_markup=keyb_start)
+            await state.finish()
+        if flag == True:
+            await FSMAdmin.next()
 
 
 async def msg_put_desired_price(message: types.Message, state: FSMContext):
@@ -239,20 +245,24 @@ async def msg_put_graf(message: types.Message):
         await message.answer('Выберите группу', reply_markup=keyboard_groups(groups))
         await FSMAdmin.create_graf.set()
 
-
+# выводит графики по id группы, потом использует имена товаров из группы и возвращает данных по ним
+# из time
 async def msg_put_graf_end(message: types.Message, state: FSMContext):
     user_id = message.from_id
 
     try:
+
         one_group_id = db_select('kind_id', user_id, message.text)
         list_times = db_select('graf_time', one_group_id[0][0])
-
-        text_message = grafs.get_graf(list_times)
+        print(list_times)
+        text_message = await grafs.get_graf(list_times)
         graf = InputFile(r'C:\programmboy\python_main\PriceComparison\graf_price.png')
+        count = 0
+        for i in text_message:
+            await message.answer(i)
+
 
         await send_graf(user_id, graf)
-        await message.answer(text_message)
-
         await message.answer(f'Отправляю графики для группы: {message.text}', reply_markup=keyb_start)
         await state.finish()
 

@@ -139,16 +139,32 @@ def db_select(*args):
         with sq.connect('PriceCompare.db') as con:
             cur = con.cursor()
             cur.execute(
-                '''SELECT price, price_discount FROM time WHERE time_t = (SELECT MAX(time_t) FROM time WHERE name = (SELECT name FROM things WHERE url = ?) and kind_id = ?)''',
+                '''SELECT price, price_discount,desired_price  FROM time WHERE time_t = (SELECT MAX(time_t) FROM time WHERE name = (SELECT name FROM things WHERE url = ?) and kind_id = ?)''',
                 (url, kind_id))
             return cur.fetchall()
-
+    # возвращает список всех паршенных товаров с разными временами из time
     if args[0] == 'graf_time':
         kind_id = args[1]
+
         with sq.connect('PriceCompare.db') as con:
             cur = con.cursor()
-            cur.execute('''SELECT name, price, price_discount, url, time_t, desired_price FROM time WHERE kind_id = ?''', (kind_id,))
-            return cur.fetchall()
+            cur.execute('''SELECT name, thing_id FROM things WHERE kind_id = ?''', (kind_id,))
+            a = cur.fetchall()
+            #print(a)
+            result = []
+            for i in a:
+                name = i[0]
+                res_one = cur.execute('''SELECT name, price, price_discount, url, time_t, desired_price FROM time WHERE name = ?''', (name,))
+                res_one = cur.fetchall()
+                result += res_one
+
+            return result
+
+
+        # with sq.connect('PriceCompare.db') as con:
+        #     cur = con.cursor()
+        #     cur.execute('''SELECT name, price, price_discount, url, time_t, desired_price FROM time WHERE kind_id = ?''', (kind_id,))
+        #     return cur.fetchall()
 
 
 # УДАЛЕНИЕ ИНФОРМАЦИИ ИЗ БАЗЫ
