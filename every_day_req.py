@@ -6,6 +6,8 @@ from concurrent.futures import ThreadPoolExecutor
 from create_bot import bot
 from main import send_message
 
+import multiprocessing as mp
+
 # ежедневный парс цен о всех добавленных товарах
 async def every_day_request(wait_for):
     while True:

@@ -10,13 +10,20 @@ def get_data_with_selenium(url):
 
     # поменять путь для драйвера при установке на сервер
     ser = Service(r'C:\programmboy\python_main\PriceComparison\chromedriver.exe')
-    op = webdriver.ChromeOptions()
+    options = webdriver.ChromeOptions()
+
     name_thing = None
     price_thing = None
     flag = False
     try:
     #if 1 == 1:
-        driver = webdriver.Chrome(service=ser, options=op)
+
+        # фоновый режим работы хрома
+        options.headless = True
+
+        # разрешение экран для работы в комп.версии сайта в фоновом режиме
+        options.add_argument("--window-size=1920,1080")
+        driver = webdriver.Chrome(service=ser, options=options)
         driver.get(url=url)
 
         # остановка до получения цены и названия товара
@@ -61,3 +68,7 @@ def get_data_with_selenium(url):
             return None
         else:
             return name_thing, price_thing.text
+
+
+if __name__ == '__main__':
+    print(1)
